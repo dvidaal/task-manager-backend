@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  # 1. EL CONTENEDOR DE LA BASE DE DATOS
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: kanbandb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. EL CONTENEDOR DE TU API EN PYTHON
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:password123@db:5432/kanbandb
+    volumes:
+      # Sincroniza tu código de Windows con el contenedor en tiempo real
+      - .:/app
+    depends_on:
+      - db
+
+# Define el disco duro virtual para guardar los datos de PostgreSQL
+volumes:
+  postgres_data:
