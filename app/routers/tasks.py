@@ -1,13 +1,21 @@
-from fastapi import FastAPI
-from app.database import engine, Base
-from app.routers import tasks
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from typing import List
 
-Base.metadata.create_all(bind=engine)
+from app.database import get_db
+from app.models.tasks import Task
+from app.schemas.tasks import TaskCreate, TaskResponse
 
-app = FastAPI(title="Task manager API Modular")
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
-app.include_router(tasks.router)
+@router.post("/", response_model=TaskResponse)
+def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+    db_task = Task(**task.model_dump())
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
 
-@app.get("/")
-def read_root():
-    return {"message": "¡API conectada y modularizada siguiendo Clean Code!"}
+@router.get("/", response_model=List[TaskResponse])
+def get_tasks(db: Session = Depends(get_db)):
+    return db.query(Task).all()
